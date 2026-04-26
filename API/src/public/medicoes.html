@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API - Medições & Relatórios</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #222;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        pre {
+            background: #eee;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        a {
+            color: #0056b3;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .auth-info {
+            background-color: #e6f7ff;
+            border-left: 4px solid #3399ff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .auth-info h4 {
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+
+        .auth-info code {
+            background-color: #d6eaf8;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .status-code {
+            display: inline-block;
+            width: 120px;
+            font-weight: bold;
+        }
+
+        .note {
+            background-color: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .warning {
+            background-color: #ffeaa7;
+            border-left: 4px solid #fdcb6e;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>📊 API - Medições & Relatórios</h1>
+    <p>Esta é a documentação da API para o registro de medições e a obtenção de relatórios de uso das mochilas. As
+        rotas de relatórios exigem autenticação de usuário via token JWT.</p>
+
+    <div class="section" id="endpoints">
+        <h2>🔗 Endpoints</h2>
+        <ul>
+            <li><a href="index.html">Voltar ao Menu</a></li>
+        </ul>
+        <ul>
+            <li><a href="#post-criar-medicao">POST - /medicoes/</a> - Criar medição (requer token IoT)</li>
+            <li><a href="#get-atual-medicao">GET - /medicoes/atual/:mochila</a> - Última medição por local</li>
+            <li><a href="#get-relatorio-semanal">GET - /medicoes/semanal/:mochila</a> - Relatório semanal</li>
+            <li><a href="#get-previsao-dia">GET - /medicoes/previsao/:mochila/:data</a> - Previsão para dia específico</li>
+            <li><a href="#get-relatorio-geral">GET - /medicoes/geral/:mochila</a> - Relatório geral com estatísticas</li>
+            <li><a href="#get-relatorio-mensal">GET - /medicoes/mensal/:ano/:mes/:mochila</a> - Relatório mensal</li>
+            <li><a href="#get-relatorio-anual">GET - /medicoes/anual/:ano/:mochila</a> - Relatório anual</li>
+            <li><a href="#get-relatorio-dia">GET - /medicoes/dia/:data/:mochila</a> - Relatório diário</li>
+            <li><a href="#get-relatorio-peso">GET - /medicoes/diaMaisMenosPeso/:mochila</a> - Dia com mais e menos peso</li>
+            <li><a href="#get-relatorio-periodo">GET - /medicoes/periodo/:inicio/:fim/:mochila</a> - Relatório por período</li>
+        </ul>
+    </div>
+
+    <div class="section" id="autenticacao">
+        <h2>🔒 Autenticação</h2>
+        <p>A maioria dos endpoints desta API requer autenticação de sessão via <strong>JSON Web Token (JWT)</strong>. O
+            token deve ser enviado no cabeçalho (header) da requisição, utilizando o esquema <code>Bearer</code>.</p>
+        <h3>Exemplo de Header de Requisição:</h3>
+        <pre>Authorization: Bearer &lt;seu_token_aqui&gt;</pre>
+        
+        <div class="auth-info">
+            <h4>⚠️ Nota Importante:</h4>
+            <p>A rota <strong>POST /medicoes/</strong> requer autenticação IoT (<code>tipo === 'iot'</code>), enquanto todas as outras rotas requerem autenticação de usuário (<code>tipo === 'usuario'</code>).</p>
+        </div>
+    </div>
+
+    <div class="section" id="post-criar-medicao">
+        <h2>📝 POST - /medicoes/</h2>
+        <p>Registra uma nova medição de peso para uma mochila específica, enviada por um dispositivo IoT. A validação inclui o status de uso da mochila e o limite de peso do usuário. Requer <strong>autenticação IoT</strong>.</p>
+        
+        <div class="warning">
+            <strong>⚠️ Autenticação Específica:</strong> Esta rota requer token JWT do tipo <code>iot</code>, não de usuário.
+        </div>
+        
+        <h3>Corpo da requisição:</h3>
+        <pre>{
+    "MedicaoPeso": 12.5,
+    "MedicaoLocal": "esquerda" // Valores válidos: "esquerda", "direita", "centro", "ambos"
+}</pre>
+        <h3>Respostas:</h3>
+        <ul>
+            <li><span class="status-code">201 Created:</span> <code>{ "ok": true, "message": "Medição registrada com sucesso" }</code></li>
+            <li><span class="status-code">400 Bad Request:</span> <code>{ "error": "Peso é obrigatório" }</code>, <code>{ "error": "Local é obrigatório" }</code>, <code>{ "error": "Peso da medição deve ser maior ou igual a zero" }</code>, <code>{ "error": "Local deve ser 'esquerda', 'direita', 'centro' ou 'ambos'" }</code></li>
+            <li><span class="status-code">401 Unauthorized:</span> <code>{ "error": "Mochila não autenticada" }</code></li>
+            <li><span class="status-code">403 Forbidden:</span> <code>{ "error": "Token inválido para mochila" }</code></li>
+            <li><span class="status-code">404 Not Found:</span> <code>{ "error": "Mochila não encontrada" }</code>, <code>{ "error": "Nenhum usuário ativo para esta mochila" }</code>, <code>{ "error": "Usuário não encontrado na tabela" }</code></li>
+            <li><span class="status-code">500 Internal Server Error:</span> <code>{ "error": "Erro ao registrar medição" }</code></li>
+        </ul>
+        <a href="#endpoints" class="back-link">⬅ Voltar para Endpoints</a>
+    </div>
+
+    <div class="section" id="get-atual-medicao">
+        <h2>🕐 GET - /medicoes/atual/:mochila</h2>
+        <p>Retorna a última medição registrada para cada local (esquerda, direita, ambos, centro) de uma mochila específica. Requer <a href="#autenticacao">autenticação</a> de usuário.</p>
+        <h3>Parâmetros de URL:</h3>
+        <pre>/medicoes/atual/mochila_codigo_exemplo</pre>
+        <h3>Resposta de Sucesso (200 OK):</h3>
+        <pre>{
+    "ok": true,
+    "esquerda": {
+        "MedicaoPeso": 5.2,
+        "MedicaoData": "2025-09-06T15:30:00.000Z",
+        "MedicaoStatus": "Dentro do limite",
+        "MedicaoLocal": "esquerda",
+        "MedicaoPesoMaximoPorcentagem": 85.2,
+        "MedicaoPesoMais": 1.5
+    },
+    "direita": { ... },
+    "ambos": { ... },
+    "centro": { ... }
+}</pre>
+        <h3>Respostas:</h3>
+        <ul>
+            <li><span class="status-code">200 OK:</span> Retorna objeto com últimas medições por local</li>
+            <li><span class="status-code">400 Bad Request:</span> <code>{ "error": "ID do usuário inválido" }</code> ou <code>{ "error": "Informe o código da mochila" }</code></li>
+            <li><span class="status-code">401 Unauthorized:</span> <code>{ "error": "Usuário não autenticado" }</code></li>
+            <li><span class="status-code">403 Forbidden:</span> <code>{ "error": "Token inválido para usuário" }</code></li>
+            <li><span class="status-code">404 Not Found:</span> <code>{ "error": "Mochila não encontrada" }</code> ou <code>{ "error": "Usuário não encontrado" }</code></li>
+            <li><span class="status-code">500 Internal Server Error:</span> <code>{ "error": "Erro ao buscar medições" }</code></li>
+        </ul>
+        <a href="#endpoints" class="back-link">⬅ Voltar para Endpoints</a>
+    </div>
+
+    <div class="section" id="get-relatorio-semanal">
+        <h2>🗓️ GET - /medicoes/semanal/:mochila</h2>
+        <p>Retorna todas as medições registradas para uma mochila específica nos últimos 7 dias. Requer <a href="#autenticacao">autenticação</a> de usuário.</p>
+        <h3>Parâmetros de URL:</h3>
+        <pre>/medicoes/semanal/mochila_codigo_exemplo</pre>
+        <h3>Resposta de Sucesso (200 OK):</h3>
+        <pre>[
+    {
+        "MedicaoPeso": 10.5,
+        "MedicaoData": "2025-09-06T15:30:00.000Z",
+        "MedicaoStatus": "Dentro do limite",
+        "MedicaoLocal": "ambos",
+        "MedicaoPesoMaximoPorcentagem": 85.2,
+        "MedicaoPesoMais": 1.5
+    },
+    ...
+]</pre>
+        <h3>Respostas:</h3>
+        <ul>
+            <li><span class="status-code">200 OK:</span> Retorna array de objetos de medição dos últimos 7 dias</li>
+            <li><span class="status-code">400 Bad Request:</span> <code>{ "error": "ID do usuário inválido" }</code> ou <code>{ "error": "Informe o código da mochila" }</code></li>
+            <li><span class="status-code">401 Unauthorized:</span> <code>{ "error": "Usuário não autenticado" }</code></li>
+            <li><span class="status-code">403 Forbidden:</span> <code>{ "error": "Token inválido para usuário" }</code></li>
+            <li><span class="status-code">404 Not Found:</span> <code>{ "error": "Mochila não encontrada" }</code>, <code>{ "error": "Nenhuma medição encontrada nos últimos 7 dias" }</code> ou <code>{ "error": "Usuário não está vinculado a esta mochila" }</code></li>
+            <li><span class="status-code">500 Internal Server Error:</span> <code>{ "error": "Erro ao buscar relatório semanal" }</code></li>
+        </ul>
+        <a href="#endpoints" class="back-link">⬅ Voltar para Endpoints</a>
+    </div>
+
+    <div class="section" id="get-previsao-dia">
+        <h2>🔮 GET - /medicoes/previsao/:mochila/:data</h2>
+        <p>Calcula previsão de peso para um dia específico da semana baseado em dados históricos do mesmo dia da semana. Requer <a href="#autenticacao">autenticação</a> de usuário.</p>
+        <h3>Parâmetros de URL:</h3>
+        <pre>/medicoes/previsao/mochila_codigo_exemplo/2025-09-10</pre>
+        <h3>Respostas:</h3>
+        <ul>
+            <li><span class="status-code">200 OK:</span> Retorna objeto com previsão e estatísticas</li>
+            <li><span class="status-code">400 Bad Request:</span> <code>{ "error": "ID do usuário inválido" }</code>, <code>{ "error": "Informe o código da mochila" }</code> ou <code>{ "error": "Data inválida" }</code></li>
+            <li><span class="status-code">401 Unauthorized:</span> <code>{ "error": "Usuário não autenticado" }</code></li>
+            <li><span class="status-code">403 Forbidden:</span> <code>{ "error": "Token inválido para usuário" }</code></li>
+            <li><span class="status-code">404 Not Found:</span> <code>{ "error": "Mochila não encontrada" }</code> ou <code>{ "error": "Usuário não está vinculado a esta mochila" }</code></li>
+            <li><span class="status-code">500 Internal Server Error:</span> <code>{ "error": "Erro ao calcular previsão" }</code></li>
+        </ul>
+        <a href="#endpoints" class="back-link">⬅ Voltar para Endpoints</a>
+    </div>
+
+    <div class="section" id="get-relatorio-geral">
+        <h2>📈 GET - /medicoes/geral/:mochila</h2>
+        <p>Retorna relatório geral completo com todas as medições do usuário para uma mochila, incluindo estatísticas detalhadas e agrupamento por dia da semana. Requer <a href="#autenticacao">autenticação</a> de usuário.</p>
+        <h3>Parâmetros de URL:</h3>
+        <pre>/medicoes/geral/mochila_codigo_exemplo</pre>
+        <h3>Respostas:</h3>
+        <ul>
+            <li><span class="status-code">200 OK:</span> Retorna objeto com estatísticas e dados agrupados</li>
+            <li><span class="status-code">400 Bad Request:</span> <code>{ "error": "ID do usuário inválido" }</code> ou <code>{ "error": "Informe o código da mochila" }</code></li>
+            <li><span class="status-code">401 Unauthorized:</span> <code>{ "error": "Usuário não autenticado" }</code></li>
+            <li><span class="status-code">403 Forbidden:</span> <code>{ "error": "Token inválido para usuário" }</code></li>
+            <li><span class="status-code">404 Not Found:</span> <code>{ "error": "Mochila não encontrada" }</code> ou <code>{ "error": "Nenhuma medição encontrada" }</code></li>
+            <li><span class="status-code">500 Internal Server Error:</span> <code>{ "error": "Erro ao buscar relatório geral" }</code></li>
+        </ul>
+        <a href="#endpoints" class="back-link">⬅ Voltar para Endpoints</a>
+    </div>
+
+    <div class="section" id="get-relatorio-mensal">
+        <h2>📅 GET - /medicoes/mensal/:ano/:mes/:mochila</h2>
+        <p>Retorna todas as medições registradas para uma mochila em um mês e ano específicos. Requer <a href="#autenticacao">autenticação</a> de usuário.</p>
+        <h3>Parâmetros de URL:</h3>
+        <pre>/medicoes/mensal/2025/08/mochila_codigo_exemplo</pre>
+        <h3>Respostas:</h3>
+        <ul>
+            <li><span class="status-code">200 OK:</span> Retorna array de medições do mês processadas</li>
+            <li><span class="status-code">400 Bad Request:</span> <code>{ "error": "Informe mês e ano" }</code> ou <code>{ "error": "ID do usuário inválido" }</code></li>
+            <li><span class="status-code">401 Unauthorized:</span> <code>{ "error": "Usuário não autenticado" }</code></li>
+            <li><span class="status-code">403 Forbidden:</span> <code>{ "error": "Token inválido para usuário" }</code></li>
+            <li><span class="status-code">404 Not Found:</span> <code>{ "error": "Mochila não encontrada" }</code> ou <code>{ "error": "Usuário não encontrado" }</code></li>
+            <li><span class="status-code">500 Internal Server Error:</span> <code>{ "error": "Erro ao buscar e processar relatório mensal" }</code></li>
+        </ul>
+        <a href="#endpoints" class="back-link">⬅ Voltar para Endpoints</a>
+    </div>
+
+    <div class="section" id="get-relatorio-anual">
+        <h2>📊 GET - /medicoes/anual/:ano/:mochila</h2>
+        <p>Retorna relatório anual com médias mensais e estatísticas para uma mochila em um ano específico. Requer <a href="#autenticacao">autenticação</a> de usuário.</p>
+        <h3>Parâmetros de URL:</h3>
+        <pre>/medicoes/anual/2025/mochila_codigo_exemplo</pre>
+        <h3>Respostas:</h3>
+        <ul>
+            <li><span class="status-code">200 OK:</span> Retorna objeto com médias mensais e estatísticas</li>
+            <li><span class="status-code">400 Bad Request:</span> <code>{ "error": "Ano inválido" }</code> ou <code>{ "error": "Informe o código da mochila" }</code></li>
+            <li><span class="status-code">401 Unauthorized:</span> <code>{ "error": "Usuário não autenticado" }</code></li>
+            <li><span class="status-code">403 Forbidden:</span> <code>{ "error": "Token inválido para usuário" }</code></li>
+            <li><span class="status-code">404 Not Found:</span> <code>{ "error": "Mochila não encontrada" }</code> ou <code>{ "error": "Usuário não encontrado" }</code></li>
+            <li><span class="status-code">500 Internal Server Error:</span> <code>{ "error": "Erro ao buscar relatório anual" }</code></li>
+        </ul>
+        <a href="#endpoints" class="back-link">⬅ Voltar para Endpoints</a>
+    </div>
+
+    <div class="section" id="get-relatorio-dia">
+        <h2>☀️ GET - /medicoes/dia/:data/:mochila</h2>
+        <p>Retorna todas as medições registradas para uma mochila em um dia específico. Requer <a href="#autenticacao">autenticação</a> de usuário.</p>
+        <h3>Parâmetros de URL:</h3>
+        <pre>/medicoes/dia/2025-08-10/mochila_codigo_exemplo</pre>
+        <h3>Respostas:</h3>
+        <ul>
+            <li><span class="status-code">200 OK:</span> Retorna array de medições do dia</li>
+            <li><span class="status-code">400 Bad Request:</span> <code>{ "error": "Informe a data" }</code> ou <code>{ "error": "Data inválida" }</code></li>
+            <li><span class="status-code">401 Unauthorized:</span> <code>{ "error": "Usuário não autenticado" }</code></li>
+            <li><span class="status-code">403 Forbidden:</span> <code>{ "error": "Token inválido para usuário" }</code></li>
+            <li><span class="status-code">404 Not Found:</span> <code>{ "error": "Mochila não encontrada" }</code> ou <code>{ "error": "Nenhuma medição encontrada no dia informado" }</code></li>
+            <li><span class="status-code">500 Internal Server Error:</span> <code>{ "error": "Erro ao buscar relatório diário" }</code></li>
+        </ul>
+        <a href="#endpoints" class="back-link">⬅ Voltar para Endpoints</a>
+    </div>
+
+    <div class="section" id="get-relatorio-peso">
+        <h2>⚖️ GET - /medicoes/diaMaisMenosPeso/:mochila</h2>
+        <p>Encontra as medições com o maior e o menor peso registrado para uma mochila. Requer <a href="#autenticacao">autenticação</a> de usuário.</p>
+        <h3>Parâmetros de URL:</h3>
+        <pre>/medicoes/diaMaisMenosPeso/mochila_codigo_exemplo</pre>
+        <h3>Resposta de Sucesso (200 OK):</h3>
+        <pre>{
+    "ok": true,
+    "maisPeso": {
+        "MedicaoPeso": 15.2,
+        "MedicaoData": "2025-09-06T15:30:00.000Z",
+        "MedicaoStatus": "Acima do limite",
+        "MedicaoLocal": "ambos",
+        "MedicaoPesoMaximoPorcentagem": 120.5,
+        "MedicaoPesoMais": 3.2
+    },
+    "menosPeso": {
+        "MedicaoPeso": 2.1,
+        "MedicaoData": "2025-09-05T10:15:00.000Z",
+        "MedicaoStatus": "Dentro do limite",
+        "MedicaoLocal": "esquerda",
+        "MedicaoPesoMaximoPorcentagem": 25.3,
+        "MedicaoPesoMais": 8.9
+    }
+}</pre>
+        <h3>Respostas:</h3>
+        <ul>
+            <li><span class="status-code">200 OK:</span> Retorna objeto com medições de maior e menor peso</li>
+            <li><span class="status-code">400 Bad Request:</span> <code>{ "error": "ID do usuário inválido" }</code> ou <code>{ "error": "Informe o código da mochila" }</code></li>
+            <li><span class="status-code">401 Unauthorized:</span> <code>{ "error": "Usuário não autenticado" }</code></li>
+            <li><span class="status-code">403 Forbidden:</span> <code>{ "error": "Token inválido para usuário" }</code></li>
+            <li><span class="status-code">404 Not Found:</span> <code>{ "error": "Mochila não encontrada" }</code> ou <code>{ "error": "Nenhuma medição encontrada" }</code></li>
+            <li><span class="status-code">500 Internal Server Error:</span> <code>{ "error": "Erro ao buscar dia mais/menos peso" }</code></li>
+        </ul>
+        <a href="#endpoints" class="back-link">⬅ Voltar para Endpoints</a>
+    </div>
+
+    <div class="section" id="get-relatorio-periodo">
+        <h2>🕰️ GET - /medicoes/periodo/:inicio/:fim/:mochila</h2>
+        <p>Retorna todas as medições para uma mochila dentro de um intervalo de datas informado. Requer <a href="#autenticacao">autenticação</a> de usuário.</p>
+        <h3>Parâmetros de URL:</h3>
+        <pre>/medicoes/periodo/2025-08-01/2025-08-15/mochila_codigo_exemplo</pre>
+        <h3>Respostas:</h3>
+        <ul>
+            <li><span class="status-code">200 OK:</span> Retorna array de medições do período</li>
+            <li><span class="status-code">400 Bad Request:</span> <code>{ "error": "Datas de início e fim são obrigatórias (formato: YYYY-MM-DD)" }</code> ou <code>{ "error": "Datas inválidas" }</code></li>
+            <li><span class="status-code">401 Unauthorized:</span> <code>{ "error": "Usuário não autenticado" }</code></li>
+            <li><span class="status-code">403 Forbidden:</span> <code>{ "error": "Token inválido para usuário" }</code></li>
+            <li><span class="status-code">404 Not Found:</span> <code>{ "error": "Mochila não encontrada" }</code> ou <code>{ "error": "Nenhuma medição encontrada nesse período" }</code></li>
+            <li><span class="status-code">500 Internal Server Error:</span> <code>{ "error": "Erro ao buscar medições por período" }</code></li>
+        </ul>
+        <a href="#endpoints" class="back-link">⬅ Voltar para Endpoints</a>
+    </div>
+</body>
+
+</html>
