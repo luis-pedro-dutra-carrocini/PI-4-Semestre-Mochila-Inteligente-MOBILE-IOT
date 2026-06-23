@@ -1,4 +1,4 @@
-# PI-3-Semestre-Taskflow-BDNR
+# PI-4-Semestre-Mochila-Inteligente-MOBILE-IOT
 Repositório do GRUPO 06 do Projeto Interdisciplinar do 4º semestre DSM 2025/2. Alunos: Cláudio de Melo Júnior, João Vitor Nicolau e Luís Pedro Dutra Carrocini. Link para o [repositório original](https://github.com/FatecFranca/DSM-G06-PI4-2025-2/).
 
 ---
